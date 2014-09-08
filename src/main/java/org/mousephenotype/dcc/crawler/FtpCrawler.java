@@ -46,6 +46,7 @@ public class FtpCrawler implements Runnable {
     private FileSource fileSource;
     private ZipFileFilter zipFilter;
     private String basePath;
+    private final int CONNECT_TIMEOUT_MILLISECS = 300000; // 5 minutes
 
     FtpCrawler(Centre centre, FileSource fileSource) {
         this.centre = centre;
@@ -109,6 +110,7 @@ public class FtpCrawler implements Runnable {
         try {
             logger.debug("Crawler is trying to connect to '{}'", hostname);
             client = new FTPClient();
+            client.setConnectTimeout(CONNECT_TIMEOUT_MILLISECS);
             client.connect(hostname);
             client.login(username, password);
             int reply = client.getReplyCode();

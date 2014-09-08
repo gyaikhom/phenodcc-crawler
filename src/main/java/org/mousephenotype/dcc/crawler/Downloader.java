@@ -38,16 +38,16 @@ import org.slf4j.LoggerFactory;
 /**
  * An instance of the downloader is responsible for downloading a specific zip
  * file. Multiple downloaders are created by the DownloadManager, the
- * multiplicity of which is determined by the command line options supplied
- * by the user. A downloader will continue to download files as long as there
- * are files to be downloaded. This decision is based on the file download map
+ * multiplicity of which is determined by the command line options supplied by
+ * the user. A downloader will continue to download files as long as there are
+ * files to be downloaded. This decision is based on the file download map
  * created by the crawlers (FtpCrawler or SftpCrawler). When no files are left
  * to download, the downloader instances return to DownloadManager.
- * 
+ *
  * Since every Zip file that has been downloaded successfully can be processed
  * simultaneously, each downloader spawns a processing thread for each
  * downloaded zip file. This thread runs an instance of XmlExtractor.
- * 
+ *
  * @author Gagarine Yaikhom <g.yaikhom@har.mrc.ac.uk>
  */
 public class Downloader implements Runnable {
@@ -71,6 +71,8 @@ public class Downloader implements Runnable {
     private int maxRetries;
     private String backupDir;
     private DatabaseAccessor da;
+
+    private final int CONNECT_TIMEOUT_MILLISECS = 300000; // 5 minutes
 
     Downloader(String backupDir, int poolSize, int maxRetries) {
         ftpConnections = new HashMap<>();
@@ -245,19 +247,23 @@ public class Downloader implements Runnable {
         username = fs.getUsername();
         password = fs.getAccesskey();
 
-        if (username == null || username.isEmpty()
-                || password == null || password.isEmpty()) {
-            logger.error("Invalid credential for server '{}'", hostname);
+        if (username == null || username.isEmpty()) {
+            logger.error("Invalid username for server '{}'", hostname);
         } else {
             switch (protocol) {
                 case "ftp":
-                    if (ftpConnect(username, password)) {
-                        // save for later reuse
-                        ftpConnections.put(hostname, client);
-                        returnValue = true;
+                    if (password == null || password.isEmpty()) {
+                        logger.error("Invalid password for server '{}'", hostname);
+                    } else {
+                        if (ftpConnect(username, password)) {
+                            // save for later reuse
+                            ftpConnections.put(hostname, client);
+                            returnValue = true;
+                        }
                     }
                     break;
                 case "sftp":
+                    // If password is empty, try public key authentication.
                     if (sftpConnect(username, password)) {
                         // save for later reuse
                         sftpSessions.put(hostname, session);
@@ -279,11 +285,23 @@ public class Downloader implements Runnable {
             logger.debug("Downloader is trying to connect to '{}'", hostname);
             JSch jsch = new JSch();
             session = jsch.getSession(username, hostname);
-            session.setPassword(password);
+
+            /* if password is null or empty, assume public key
+             authentication. This facility was added to handle RIKEN file
+             server. Ensure that the key have been added to the .ssh/
+             dirctories. */
             Properties config = new Properties();
+            if (password == null || password.isEmpty()) {
+                jsch.setKnownHosts("~/.ssh/known_hosts");
+                jsch.addIdentity("~/.ssh/id_rsa");
+                config.put("PreferredAuthentications", "publickey");
+            } else {
+                session.setPassword(password);
+            }
             config.put("StrictHostKeyChecking", "no");
             session.setConfig(config);
-            session.connect();
+            session.connect(CONNECT_TIMEOUT_MILLISECS);
+
             if (session.isConnected()) {
                 logger.debug("Downloader now has a valid session with sftp server at '{}'", hostname);
                 Channel temp = session.openChannel("sftp");

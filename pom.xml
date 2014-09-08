@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.mousephenotype.dcc.crawler</groupId>
-    <version>2.0.1</version>
+    <version>2.2.1</version>
     <packaging>jar</packaging>
     <name>phenodcc-crawler</name>
     <url>http://www.mousephenotype.org</url>
@@ -69,12 +69,12 @@
         <dependency>
             <groupId>org.mousephenotype.dcc.entities</groupId>
             <artifactId>phenodcc-entities-crawler</artifactId>
-            <version>2.1.1</version>
+            <version>2.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.mousephenotype.dcc.exportlibrary.xsdvalidation</groupId>
             <artifactId>exportlibrary.xsdvalidation</artifactId>
-            <version>1.3.1</version>
+            <version>1.3.2</version>
             <classifier>jar-with-dependencies</classifier>
         </dependency>
     </dependencies>

@@ -183,13 +183,19 @@ public final class TheApplication {
             LOGGER.info("Application will now exit...");
         }
     }
+    
+    private void cleanupAndExit(int code) {
+        SingleInstance si = SingleInstance.getInstance();
+        si.shutdown();
+        System.exit(code);
+    }
 
     private void exit(String message, boolean h) {
         LOGGER.error(message + "\nApplication will now exit...\n");
         if (h) {
             showHelp();
         }
-        System.exit(1);
+        cleanupAndExit(1);
     }
 
     private boolean parseArgs(String[] args) {
@@ -199,7 +205,7 @@ public final class TheApplication {
             CommandLine cmd = parser.parse(OPTIONS, args);
             if (cmd.hasOption(OPT_HELP)) {
                 showHelp();
-                System.exit(0);
+                cleanupAndExit(0);
             } else {
                 parseResult = true;
                 parseResult &= (getDataDirectory(cmd) == SUCCESS);

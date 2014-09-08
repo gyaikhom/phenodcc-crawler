@@ -113,6 +113,7 @@ public class SingleInstance {
                 }
             } catch (FileNotFoundException e) {
                 LOGGER.error("The impossible scenario has happened!");
+                status = INVALID_LOCK;
             }
         }
 

@@ -21,6 +21,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
+import java.util.Properties;
 import java.util.Vector;
 import org.mousephenotype.dcc.crawler.entities.*;
 import org.slf4j.Logger;
@@ -31,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * on a specific sFTP server. A thread that runs an instance of this class is
  * created by the DownloadManager for each of the file sources hosted by the
  * centres. Hence, multiple sFTP servers are crawled simultaneously.
- * 
+ *
  * During crawling, the SftpCrawler visits the add, edit and delete directories
  * in the root path specific in the file source specification. Only the zip
  * files in these directories are processed, and of these zip files, only those
@@ -50,6 +51,7 @@ public class SftpCrawler implements Runnable {
     private ChannelSftp sftpChannel;
     private FileSource fileSource;
     private String basePath;
+    private final int CONNECT_TIMEOUT_MILLISECS = 300000; // 5 minutes
 
     SftpCrawler(Centre centre, FileSource fileSource) {
         this.centre = centre;
@@ -92,9 +94,8 @@ public class SftpCrawler implements Runnable {
         username = fileSource.getUsername();
         password = fileSource.getAccesskey();
 
-        if (username == null || username.isEmpty()
-                || password == null || password.isEmpty()) {
-            logger.error("Invalid credential for server '{}' at centre '{}'",
+        if (username == null || username.isEmpty()) {
+            logger.error("Invalid username for server '{}' at centre '{}'",
                     hostname, centre.getShortName());
         } else {
             if (connect(username, password)) {
@@ -111,15 +112,27 @@ public class SftpCrawler implements Runnable {
             logger.debug("Crawler is trying to connect to '{}'", hostname);
             JSch jsch = new JSch();
             session = jsch.getSession(username, hostname);
-            session.setPassword(password);
-            java.util.Properties config = new java.util.Properties();
+            
+            /* if password is null or empty, assume public key
+             authentication. This facility was added to handle RIKEN file
+             server. Ensure that the key have been added to the .ssh/
+             dirctories. */
+            Properties config = new Properties();
+            if (password == null || password.isEmpty()) {
+                jsch.setKnownHosts("~/.ssh/known_hosts");
+                jsch.addIdentity("~/.ssh/id_rsa");
+                config.put("PreferredAuthentications", "publickey");
+            } else {
+                session.setPassword(password);
+            }
             config.put("StrictHostKeyChecking", "no");
             session.setConfig(config);
-            session.connect();
+            session.connect(CONNECT_TIMEOUT_MILLISECS);
+
             if (session.isConnected()) {
                 logger.debug("Crawler now has a valid session with sftp server at '{}'", hostname);
                 channel = session.openChannel("sftp");
-                channel.connect();
+                channel.connect(CONNECT_TIMEOUT_MILLISECS);
                 sftpChannel = (ChannelSftp) channel;
                 if (sftpChannel.isConnected()) {
                     logger.debug("Crawler has opened a channel with sftp server at '{}'", hostname);
