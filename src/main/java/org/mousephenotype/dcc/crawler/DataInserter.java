@@ -57,9 +57,10 @@ public class DataInserter {
     private static DataInserter instance = null;
     private String dataDirectory;
     private DatabaseAccessor da;
-    private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     private String xmlSerialiserPropPath = null;
     private String xmlValidatorPropPath = null;
+    private String xmlValidationResourcesPropPath = null;
     private String contextPropPath = null;
     private String overviewBuilderDatabase = null;
     private String overviewBuilder = null;
@@ -78,6 +79,9 @@ public class DataInserter {
         }
         if (sm.hasCustomXmlValidatorSettings()) {
             xmlValidatorPropPath = sm.getXmlValidatorPropPath();
+        }
+        if (sm.hasCustomXmlValidationResourcesSettings()) {
+            xmlValidationResourcesPropPath = sm.getXmlValidationResourcesPropPath();
         }
         if (sm.hasCustomContextSettings()) {
             contextPropPath = sm.getContextPropPath();
@@ -208,23 +212,25 @@ public class DataInserter {
                         "XML file id: " + xmlFileId);
                 List<String> argumentsList = new ArrayList<>();
                 argumentsList.add("java");
+                argumentsList.add("-Xmx6g");
+                argumentsList.add("-XX:+UseSerialGC");
                 argumentsList.add("-jar");
                 argumentsList.add("phenodcc-validator.jar");
                 argumentsList.add("-t");
                 argumentsList.add(xmlFileId.toString());
                 argumentsList.add("-f");
-                argumentsList.add(xmlSerialiserPropPath);
-                argumentsList.add("-h");
                 argumentsList.add(xmlValidatorPropPath);
+                argumentsList.add("-h");
+                argumentsList.add(xmlValidationResourcesPropPath);
 
-                StringBuilder sb = new StringBuilder("java -jar");
+                StringBuilder sb = new StringBuilder("java -Xmx6g -XX:+UseSerialGC -jar");
                 sb.append(" phenodcc-validator.jar ");
                 sb.append(" -t ");
                 sb.append(xmlFileId);
                 sb.append(" -f ");
-                sb.append(xmlSerialiserPropPath);
-                sb.append(" -h ");
                 sb.append(xmlValidatorPropPath);
+                sb.append(" -h ");
+                sb.append(xmlValidationResourcesPropPath);
                 logger.info(sb.toString());
                 returnValue = executeTool(argumentsList);
                 da.finishSessionTask(currentTask, (short) returnValue);

@@ -59,8 +59,9 @@ public final class TheApplication {
     private static final String OPT_DATA_DIR = "d";
     private static final String OPT_SEND_REPORT = "r";
     private static final String OPT_CRAWLER_PROP_FILE = "c";
-    private static final String OPT_XMLSERIALISER_PROP_FILE = "x";
+    private static final String OPT_XMLSERIALISER_PROP_FILE = "s";
     private static final String OPT_XMLVALIDATOR_PROP_FILE = "v";
+    private static final String OPT_XMLVALIDATION_RESOURCES_PROP_FILE = "x";
     private static final String OPT_CONTEXT_PROP_FILE = "o";
     private static final Options OPTIONS = new Options();
 
@@ -75,6 +76,7 @@ public final class TheApplication {
         OPTIONS.addOption(OPT_SEND_REPORT, true, "If you wish the crawler to send a report, use this switch and provide a valid email Id");
         OPTIONS.addOption(OPT_XMLSERIALISER_PROP_FILE, true, "The path to the properties file that specifies the XML serialiser configuration.");
         OPTIONS.addOption(OPT_XMLVALIDATOR_PROP_FILE, true, "The path to the properties file that specifies the XML validator configuration.");
+        OPTIONS.addOption(OPT_XMLVALIDATION_RESOURCES_PROP_FILE, true, "The path to the properties file that specifies the XML validation resources configuration.");
         OPTIONS.addOption(OPT_CONTEXT_PROP_FILE, true, "The path to the properties file that specifies the context builder configuration.");
         OPTIONS.addOption(OPT_CRAWLER_PROP_FILE, true, "The path to the properties file that specifies the Crawler configuration.");
     }
@@ -93,7 +95,8 @@ public final class TheApplication {
     private static final int INVALID_CRAWLER_PROP_FILE = 7;
     private static final int INVALID_XMLSERIALISER_PROP_FILE = 8;
     private static final int INVALID_XMLVALIDATOR_PROP_FILE = 9;
-    private static final int INVALID_CONTEXT_PROP_FILE = 10;
+    private static final int INVALID_XMLVALIDATION_RESOURCES_PROP_FILE = 10;
+    private static final int INVALID_CONTEXT_PROP_FILE = 11;
 
     // initialise application configuration using the default values
     private int poolSize = DEFAULT_POOLSIZE;
@@ -117,10 +120,11 @@ public final class TheApplication {
     private String crawlerPropFile = null;
     private String xmlSerialiserPropFile = null;
     private String xmlValidatorPropFile = null;
+    private String xmlValidationResourcesPropFile = null;
     private String contextPropFile = null;
 
     // application variables
-    private StringBuilder header = new StringBuilder();
+    private final StringBuilder header = new StringBuilder();
     private SessionInitiator processInitiator;
 
     private void showHelp() {
@@ -161,6 +165,8 @@ public final class TheApplication {
     private void setup(String[] args) {
         LOGGER.info(header.toString());
         if (parseArgs(args)) {
+            SettingsManager sm = SettingsManager.getInstance();
+            sm.printSettings();
             if (createRequiredDirectories()) {
                 processInitiator = new SessionInitiator(dataDirectory, numParallelDownloaders, poolSize, maxRetries);
             } else {
@@ -183,7 +189,7 @@ public final class TheApplication {
             LOGGER.info("Application will now exit...");
         }
     }
-    
+
     private void cleanupAndExit(int code) {
         SingleInstance si = SingleInstance.getInstance();
         si.shutdown();
@@ -217,6 +223,7 @@ public final class TheApplication {
                 parseResult &= (getCrawlerPropFile(cmd) == SUCCESS);
                 parseResult &= (getXmlSerialiserPropFile(cmd) == SUCCESS);
                 parseResult &= (getXmlValidatorPropFile(cmd) == SUCCESS);
+                parseResult &= (getXmlValidationResourcesPropFile(cmd) == SUCCESS);
                 parseResult &= (getContextPropFile(cmd) == SUCCESS);
             }
         } catch (ParseException e) {
@@ -323,6 +330,7 @@ public final class TheApplication {
                     parseResult = INVALID_CRAWLER_PROP_FILE;
                 } else {
                     SettingsManager sm = SettingsManager.getInstance();
+                    sm.setCrawlerPropPath(f.getAbsolutePath());
                     sm.loadCustomConfig(f);
                 }
             }
@@ -367,6 +375,26 @@ public final class TheApplication {
                 } else {
                     SettingsManager sm = SettingsManager.getInstance();
                     sm.setXmlValidatorPropPath(f.getAbsolutePath());
+                }
+            }
+        }
+        return parseResult;
+    }
+
+    private int getXmlValidationResourcesPropFile(CommandLine cmd) {
+        int parseResult = SUCCESS;
+        if (cmd.hasOption(OPT_XMLVALIDATION_RESOURCES_PROP_FILE)) {
+            xmlValidationResourcesPropFile = cmd.getOptionValue(OPT_XMLVALIDATION_RESOURCES_PROP_FILE);
+            if (xmlValidationResourcesPropFile == null || xmlValidationResourcesPropFile.isEmpty()) {
+                LOGGER.error("The supplied properties file path for XML validation resources configuration is invalid.");
+                parseResult = INVALID_XMLVALIDATION_RESOURCES_PROP_FILE;
+            } else {
+                File f = getReadableFile(xmlValidationResourcesPropFile);
+                if (f == null) {
+                    parseResult = INVALID_XMLVALIDATION_RESOURCES_PROP_FILE;
+                } else {
+                    SettingsManager sm = SettingsManager.getInstance();
+                    sm.setXmlValidationResourcesPropPath(f.getAbsolutePath());
                 }
             }
         }

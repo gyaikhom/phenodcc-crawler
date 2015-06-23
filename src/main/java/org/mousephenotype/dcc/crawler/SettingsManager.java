@@ -34,22 +34,26 @@ import org.slf4j.LoggerFactory;
  */
 public class SettingsManager {
 
-    private final Logger logger = LoggerFactory.getLogger(SettingsManager.class);
+    private final Logger LOGGER = LoggerFactory.getLogger(SettingsManager.class);
     private static final String DEFAULT_PROPERTIES = "org/mousephenotype/dcc/crawler/resources/tracker.properties";
     private static SettingsManager instance = null;
     private Properties prop;
+    private String crawlerPropPath;
     private String xmlSerialiserPropPath;
     private String xmlValidatorPropPath;
+    private String xmlValidationResourcesPropPath;
     private String contextPropPath;
     private boolean customCrawlerSettings;
     private boolean customXmlSerialiserSettings;
     private boolean customXmlValidatorSettings;
+    private boolean customXmlValidationResourcesSettings;
     private boolean customContextSettings;
 
     protected SettingsManager() {
         customCrawlerSettings = false;
         customXmlSerialiserSettings = false;
         customXmlValidatorSettings = false;
+        customXmlValidationResourcesSettings = false;
         customContextSettings = false;
     }
 
@@ -61,18 +65,46 @@ public class SettingsManager {
         return instance;
     }
 
+    public void printSettings() {
+        if (customCrawlerSettings) {
+            LOGGER.info("Crawler properties file: {}", crawlerPropPath);
+        } else {
+            LOGGER.warn("No crawler properties file");
+        }
+        if (customXmlSerialiserSettings) {
+            LOGGER.info("Serialiser properties file: {}", xmlSerialiserPropPath);
+        } else {
+            LOGGER.warn("No serialiser properties file");
+        }
+        if (customXmlValidatorSettings) {
+            LOGGER.info("Validator properties file: {}", xmlValidatorPropPath);
+        } else {
+            LOGGER.warn("No validator properties file");
+        }
+        if (customXmlValidationResourcesSettings) {
+            LOGGER.info("Validation resource properties file: {}", xmlValidationResourcesPropPath);
+        } else {
+            LOGGER.warn("No validation resource properties file");
+        }
+        if (customContextSettings) {
+            LOGGER.info("Context builder properties file: {}", contextPropPath);
+        } else {
+            LOGGER.warn("No context builder properties file");
+        }
+    }
+
     private boolean load(InputStream propertiesInputStream) {
         boolean returnValue = false;
         this.prop = new Properties();
         try {
             if (propertiesInputStream == null) {
-                logger.error("Failed to open Crawler configuration properties file");
+                LOGGER.error("Failed to open Crawler configuration properties file");
             } else {
                 prop.load(propertiesInputStream);
                 returnValue = true;
             }
         } catch (IOException e) {
-            logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
         }
         return returnValue;
     }
@@ -90,7 +122,7 @@ public class SettingsManager {
             InputStream in = new FileInputStream(f);
             returnValue = load(in);
         } catch (FileNotFoundException e) {
-            logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
         }
         customCrawlerSettings = returnValue;
         return returnValue;
@@ -132,6 +164,15 @@ public class SettingsManager {
         return xmlSerialiserPropPath;
     }
 
+    public String getCrawlerPropPath() {
+        return crawlerPropPath;
+    }
+
+    public void setCrawlerPropPath(String crawlerPropPath) {
+        customCrawlerSettings = true;
+        this.crawlerPropPath = crawlerPropPath;
+    }
+
     public void setXmlSerialiserPropPath(String propPath) {
         customXmlSerialiserSettings = true;
         xmlSerialiserPropPath = propPath;
@@ -144,6 +185,15 @@ public class SettingsManager {
     public void setXmlValidatorPropPath(String propPath) {
         customXmlValidatorSettings = true;
         xmlValidatorPropPath = propPath;
+    }
+
+    public String getXmlValidationResourcesPropPath() {
+        return xmlValidationResourcesPropPath;
+    }
+
+    public void setXmlValidationResourcesPropPath(String propPath) {
+        customXmlValidationResourcesSettings = true;
+        xmlValidationResourcesPropPath = propPath;
     }
 
     public String getContextPropPath() {
@@ -165,6 +215,10 @@ public class SettingsManager {
 
     public boolean hasCustomXmlValidatorSettings() {
         return customXmlValidatorSettings;
+    }
+
+    public boolean hasCustomXmlValidationResourcesSettings() {
+        return customXmlValidationResourcesSettings;
     }
 
     public boolean hasCustomContextSettings() {

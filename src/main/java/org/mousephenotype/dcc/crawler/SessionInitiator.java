@@ -31,10 +31,10 @@ import org.slf4j.LoggerFactory;
 public class SessionInitiator extends TimerTask {
 
     private final Logger logger = LoggerFactory.getLogger(SessionInitiator.class);
-    private int numDownloaders;
-    private int poolSize;
-    private int maxRetries;
-    private String backupDir;
+    private final int numDownloaders;
+    private final int poolSize;
+    private final int maxRetries;
+    private final String backupDir;
     private boolean isActive;
 
     public SessionInitiator(String backupDir, int numDownloaders, int poolSize, int maxRetries) {
