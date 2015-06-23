@@ -18,21 +18,32 @@ processes so that the data is made available for quality control.
     (http://www.mousephenotype.org)
 
     usage:
-       java -jar program.jar [-a <arg>] [-c <arg>] [-d <arg>] [-h] [-m <arg>] [-o <arg>] [-p <arg>] [-r <arg>] [-t <arg>] [-v <arg>] [-x <arg>]
-    
-    -a <arg>   Number of parallel downloaders to use.
-    -c <arg>   The path to the properties file that specifies the Crawler configuration.
-    -d <arg>   The path where the downloaded zipped data files will be stored.
-               If unspecified, the current directory where the program is being executed is used.
-    -h         Show help message on how to use the system.
-    -m <arg>   Maximum number of download retries.
-    -o <arg>   The path to the properties file that specifies the context builder configuration.
-    -p <arg>   Sets the delay (in hours) for periodic runs. If zero, the program returns
-               immediately after processing has finished.
-    -r <arg>   If you wish the crawler to send a report, use this switch and provide a valid email Id
-    -t <arg>   Maximum size of the thread pool.
-    -v <arg>   The path to the properties file that specifies the XML validator configuration.
-    -x <arg>   The path to the properties file that specifies the XML serialiser configuration.
+        java -jar program.jar [-a <arg>] [-c <arg>]
+            [-d <arg>] [-h] [-m <arg>] [-o <arg>]
+            [-p <arg>] [-r <arg>] [-s <arg>]
+            [-t <arg>] [-v <arg>] [-x <arg>]
+
+        -a <arg>   Number of parallel downloaders to use.
+        -c <arg>   The path to the properties file that specifies
+                   the Crawler configuration.
+        -d <arg>   The path where the downloaded zipped data files will
+                   be stored. If unspecified, the current directory where
+                   the program is being executed is used.
+        -h         Show help message on how to use the system.
+        -m <arg>   Maximum number of download retries.
+        -o <arg>   The path to the properties file that specifies
+                   the context builder configuration.
+        -p <arg>   Sets the delay (in hours) for periodic runs. If zero, the
+                   program returns immediately after processing has finished.
+        -r <arg>   If you wish the crawler to send a report, use this
+                   switch and provide a valid email Id
+        -s <arg>   The path to the properties file that specifies
+                   the XML serialiser configuration.
+        -t <arg>   Maximum size of the thread pool.
+        -v <arg>   The path to the properties file that specifies
+                   the XML validator configuration.
+        -x <arg>   The path to the properties file that specifies
+                   the XML validation resources configuration.
 
 
 ## Dependency
