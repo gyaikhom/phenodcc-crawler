@@ -53,7 +53,7 @@ public class DataInserter {
     private static final int MISSING_XML_FILE_PATH = 102;
     private static final int DB_ERROR_CONNECTION = 103;
     private static final int DB_ERROR_SERIALIZING = 104;
-        
+
     private static DataInserter instance = null;
     private String dataDirectory;
     private DatabaseAccessor da;
@@ -103,8 +103,9 @@ public class DataInserter {
         return fullPath + ".contents/";
     }
 
-    private int executeTool(List<String> cmd) {
+    private int executeTool(List<String> cmd, String cmdStr) {
         int returnValue = FAILURE;
+        logger.info("Running {} ...", cmdStr);
         ProcessBuilder pb = new ProcessBuilder(
                 cmd.toArray(new String[cmd.size()]));
         pb.redirectErrorStream(true);
@@ -125,6 +126,8 @@ public class DataInserter {
         } catch (IOException ex) {
             logger.error(ex.getMessage());
         }
+        logger.info("Command {} returned exit code {}",
+                cmdStr, returnValue);
         return returnValue;
     }
 
@@ -181,8 +184,7 @@ public class DataInserter {
             sb.append(xmlSerialiserPropPath);
             sb.append(isSampleSet ? " -s " : " -p ");
             sb.append(xmlFilePath);
-            logger.info(sb.toString());
-            returnValue = executeTool(argumentsList);
+            returnValue = executeTool(argumentsList, sb.toString());
             da.finishSessionTask(currentTask, (short) returnValue);
         }
 
@@ -231,8 +233,7 @@ public class DataInserter {
                 sb.append(xmlValidatorPropPath);
                 sb.append(" -h ");
                 sb.append(xmlValidationResourcesPropPath);
-                logger.info(sb.toString());
-                returnValue = executeTool(argumentsList);
+                returnValue = executeTool(argumentsList, sb.toString());
                 da.finishSessionTask(currentTask, (short) returnValue);
             }
         }
@@ -273,8 +274,7 @@ public class DataInserter {
             sb.append(xmlFileId);
             sb.append(" -r ");
             sb.append(contextPropPath);
-            logger.info(sb.toString());
-            returnValue = executeTool(argumentsList);
+            returnValue = executeTool(argumentsList, sb.toString());
             da.finishSessionTask(currentTask, (short) returnValue);
         }
 
@@ -319,10 +319,8 @@ public class DataInserter {
                     StringBuilder sb = new StringBuilder(overviewBuilder);
                     sb.append(" ");
                     sb.append(overviewBuilderDatabase);
-                    logger.info(sb.toString());
-
                     updateOverviewStatus(AStatus.RUNNING);
-                    returnValue = executeTool(argumentsList);
+                    returnValue = executeTool(argumentsList, sb.toString());
                     da.finishSessionTask(currentTask, (short) returnValue);
                 }
             }

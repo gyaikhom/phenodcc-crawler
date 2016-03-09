@@ -58,21 +58,22 @@ public class Downloader implements Runnable {
 
     /* part relevant to ftp download */
     private FTPClient client;
-    private Map<String, FTPClient> ftpConnections;
+    private final Map<String, FTPClient> ftpConnections;
 
     /* part relevant to sftp download */
     private Session session;
     private ChannelSftp channel;
-    private Map<String, Session> sftpSessions;
-    private Map<String, ChannelSftp> sftpChannels;
+    private final Map<String, Session> sftpSessions;
+    private final Map<String, ChannelSftp> sftpChannels;
 
     /* downloader multithreading */
-    private int poolSize;
-    private int maxRetries;
-    private String backupDir;
+    private final int poolSize;
+    private final int maxRetries;
+    private final String backupDir;
     private DatabaseAccessor da;
 
     private final int CONNECT_TIMEOUT_MILLISECS = 300000; // 5 minutes
+    private final int MAX_RETRIES_TO_TAKE_JOB = 1000;
 
     Downloader(String backupDir, int poolSize, int maxRetries) {
         ftpConnections = new HashMap<>();
@@ -120,6 +121,8 @@ public class Downloader implements Runnable {
         Phase p = da.getPhase(Phase.CHECK_ZIP_FILENAME);
         AStatus s = da.getStatus(AStatus.DONE);
         ZipAction zipAction = null;
+        int num_retries = 0;
+        String oldFileTried = null;
 
         // try to take a download job
         while (true) {
@@ -128,16 +131,25 @@ public class Downloader implements Runnable {
                 logger.debug("No file to download.");
                 break; // no more download jobs left
             } else {
+                String fileTried = zipAction.getZipId().getFileName();
                 if (da.takeDownloadJob(zipAction)) {
                     logger.debug("Will now process zip action '{}' for zip file '{}'.",
-                            zipAction.getTodoId().getShortName(),
-                            zipAction.getZipId().getFileName());
+                            zipAction.getTodoId().getShortName(), fileTried);
                     break; // got a download job
                 } else {
+                    // download job has been taken; or something is wrong
                     logger.debug("Zip action '{}' for zip file '{}' is already handled.",
-                            zipAction.getTodoId().getShortName(),
-                            zipAction.getZipId().getFileName());
-                    continue; // download job has been taken; try again
+                            zipAction.getTodoId().getShortName(), fileTried);
+                    if (fileTried.equals(oldFileTried)) {
+                        ++num_retries;
+                        if (num_retries > MAX_RETRIES_TO_TAKE_JOB) {
+                            logger.error("Something is wrong! Unable to take download job for zip file '{}'.", fileTried);
+                            return returnValue;
+                        }
+                    } else {
+                        num_retries = 0;
+                        oldFileTried = fileTried;
+                    }
                 }
             }
         }
